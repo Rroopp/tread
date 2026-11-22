@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F7F9F6">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>TREAD | Institutional preview</title>
+  <link rel="stylesheet" href="/brand.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="side">
+      <a class="brand" href="/"><img class="brand-logo" src="/tread-logo-light.svg" alt="TREAD"></a>
+      <div class="label">WORKSPACE</div>
+      <div class="workspace"><span class="wsmark">S</span><span class="wsname"><b>Sandbox workspace</b><small>Institution account</small></span></div>
+      <div class="label">OPERATE</div>
+      <nav class="nav"><a class="active" href="#overview"><span class="ico">▦</span>Overview</a><a href="#activity"><span class="ico">⌁</span>Transactions</a><a href="#accounts"><span class="ico">▤</span>Accounts</a><a href="#team"><span class="ico">♧</span>Team</a></nav>
+      <div class="label">BUILD</div><nav class="nav"><a href="#developers"><span class="ico">‹ ›</span>Developers</a></nav>
+      
+    </aside>
+    <main class="main" id="overview">
+      <header class="top"><div class="crumb">Workspace <b>/</b><strong>Overview</strong></div><div class="right"><span class="pill"><i class="dot"></i>Sandbox</span></div></header>
+      <div class="content">
+        <section class="welcome"><div><div class="eyebrow">INSTITUTIONAL WORKSPACE</div><h1>Institutional<br>overview.</h1></div><div><a class="cta" href="/onboarding.html">Apply for access <span>→</span></a></div></section>
+        <section class="metrics">
+          <article class="card"><div class="metric-head">Available balance <span class="metric-icon">▤</span></div><div class="value">—</div><div class="foot">No account connected</div></article>
+          <article class="card"><div class="metric-head">Transfers <span class="metric-icon pink">⌁</span></div><div class="value">—</div><div class="foot">No activity yet</div></article>
+          
+          <article class="card"><div class="metric-head">API status <span class="metric-icon" id="api-icon">◌</span></div><div class="value status" id="api-status">Checking…</div><div class="foot">Live connection</div></article>
+        </section>
+        <div class="grid">
+          <section class="panel" id="activity"><div class="panelhead"><div><h2>Recent activity</h2><p>Transfers and settlements</p></div></div><div class="table"><table><thead><tr><th>TRANSACTION</th><th>ROUTE</th><th>AMOUNT</th><th>STATUS</th><th>CREATED</th></tr></thead></table><div class="empty"><div class="emptyicon">⌁</div><b>No activity yet</b><p>New transfers will appear here.</p></div></div></section>
+          <section class="panel"><div class="panelhead"><div><h2>Get started</h2><p>Setup progress</p></div><span class="count">01 <i>/ 04</i></span></div><ol class="steps"><li><span class="stepnum">1</span><span class="stepcopy"><b>Institution details</b><small>Application</small></span><span>→</span></li><li><span class="stepnum">2</span><span class="stepcopy"><b>KYB review</b><small>Verification</small></span></li><li><span class="stepnum">3</span><span class="stepcopy"><b>Sandbox setup</b><small>Team and API keys</small></span></li><li><span class="stepnum">4</span><span class="stepcopy"><b>Payment route</b><small>Partner connection</small></span></li></ol></section>
+        </div>
+        <div class="grid lower">
+          <section class="panel" id="accounts"><div class="panelhead"><div><h2>Accounts</h2><p>Multi-currency balances</p></div></div><div class="emptyaccount"><span class="symbol">◎</span><div><b>No accounts connected</b><p>Accounts will appear here.</p></div></div></section>
+          <section class="panel" id="team"><div class="panelhead"><div><h2>Team</h2><p>Institution access</p></div><span class="metric-icon pink">♧</span></div><div class="team"><div class="avatars"><span>O</span><span>A</span><span>+</span></div><div><b>Manage operators</b><p>Invite members and assign roles.</p></div></div></section>
+        </div>
+        <section class="dev" id="developers"><span class="devicon">‹ ›</span><div class="devcopy"><b>Developer docs</b><p>Build with the TREAD sandbox.</p></div><a href="http://localhost:3000/docs" target="_blank" rel="noreferrer">Open API docs ↗</a></section>
+        <footer class="footer"><span>TREAD · Institutional infrastructure</span></footer>
+      </div>
+    </main>
+  </div>
+  <script>
+    fetch('http://localhost:3000/v1/health/ready').then((r) => { if (!r.ok) throw new Error(); return r.json(); }).then(() => { document.querySelector('#api-status').textContent = 'Operational'; }).catch(() => { document.querySelector('#api-status').textContent = 'Unavailable'; });
+  </script>
+</body>
+</html>

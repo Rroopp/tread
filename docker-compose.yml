@@ -1,0 +1,91 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tread
+      POSTGRES_USER: tread
+      POSTGRES_PASSWORD: tread_dev_password
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - tread-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tread -d tread"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: "no"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://tread:tread_dev_password@postgres:5432/tread
+    command: ["node", "dist/database/migrate.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      TREAD_ALLOW_DEV_DATABASE_MUTATIONS: "true"
+      PORT: 3000
+      DATABASE_URL: postgresql://tread:tread_dev_password@postgres:5432/tread
+      AUTH_ACCESS_TOKEN_SECRET: ${AUTH_ACCESS_TOKEN_SECRET:-local-development-only-secret-change-before-deployment-000}
+      AUTH_ACCESS_TOKEN_TTL_SECONDS: ${AUTH_ACCESS_TOKEN_TTL_SECONDS:-900}
+      AUTH_REFRESH_TOKEN_TTL_DAYS: ${AUTH_REFRESH_TOKEN_TTL_DAYS:-30}
+      SANDBOX_RATES_JSON: '{}'
+      SANDBOX_COMPLIANCE_OUTCOME: ${SANDBOX_COMPLIANCE_OUTCOME:-REVIEW}
+      WEBHOOK_ALLOWED_HOSTS: ${WEBHOOK_ALLOWED_HOSTS:-}
+      WEBHOOK_SECRET_ENCRYPTION_KEY: ${WEBHOOK_SECRET_ENCRYPTION_KEY:-}
+      DATA_ENCRYPTION_KEYS_JSON: '{"local-dev":"MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="}'
+      DATA_ENCRYPTION_CURRENT_KEY_ID: local-dev
+      CORS_ORIGINS: http://localhost:3001
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/v1/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+      args:
+        TREAD_API_URL: http://api:3000
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOSTNAME: 0.0.0.0
+      TREAD_API_URL: http://api:3000
+      TREAD_PUBLIC_API_URL: http://localhost:3000
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  tread-postgres-data:

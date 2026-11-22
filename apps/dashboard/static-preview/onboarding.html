@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#F7F9F6">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <title>TREAD | Institution onboarding</title>
+  <link rel="stylesheet" href="/brand.css">
+</head>
+<body>
+  <header class="header"><a class="brand" href="/"><img class="brand-logo" src="/tread-logo-light.svg" alt="TREAD"></a><a class="back" href="/">← Back to home</a></header>
+  <main class="content"><div class="eyebrow">INSTITUTIONAL ACCESS</div><h1>Start your<br><em>onboarding.</em></h1><p class="intro">Tell us about your institution. We’ll review your application and follow up.</p>
+    <form class="form" id="form">
+      <label>Legal institution name<input name="legalName" placeholder="Example Payments Limited" required minlength="2" maxlength="200"></label>
+      <label>Display name<input name="displayName" placeholder="Example Payments" required minlength="2" maxlength="120"></label>
+      <div class="row"><label>Country code<input name="countryCode" placeholder="KE" required pattern="[A-Za-z]{2}" maxlength="2"></label><label>Institution type<select name="businessType" required><option value="" selected disabled>Select type</option><option value="BANK">Bank</option><option value="FINTECH">Fintech</option><option value="PAYMENT_PROVIDER">Payment provider</option><option value="BUSINESS">Business</option><option value="OTHER">Other</option></select></label></div>
+      <label>Primary contact<input name="contactName" placeholder="Full name" required minlength="2" maxlength="120"></label>
+      <label>Work email<input name="contactEmail" type="email" placeholder="you@institution.com" required maxlength="254"></label>
+      <p class="error" id="error" hidden></p><button class="submit">Submit application <span>→</span></button>
+    </form>
+    <section class="success" id="success" hidden><span class="check">✓</span><h2>Application received</h2><p>Your application is pending review. Keep this reference for your records.</p><code id="application-id"></code><div class="status">PENDING REVIEW</div></section>
+    <p class="note">This creates a pending application. It does not open an account.</p>
+  </main>
+  <script>
+    const form = document.querySelector('#form');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = form.querySelector('button'); button.disabled = true; button.textContent = 'Submitting…';
+      const error = document.querySelector('#error'); error.hidden = true;
+      try {
+        const payload = Object.fromEntries(new FormData(form).entries());
+        const response = await fetch('http://localhost:3000/v1/onboarding/institutions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error?.message ?? 'Unable to submit your application.');
+        document.querySelector('#application-id').textContent = body.applicationId;
+        form.hidden = true; document.querySelector('#success').hidden = false;
+      } catch (cause) { error.textContent = cause instanceof Error ? cause.message : 'Unable to submit your application.'; error.hidden = false; }
+      finally { button.disabled = false; button.innerHTML = 'Submit application <span>→</span>'; }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: tread_test
+          POSTGRES_USER: tread
+          POSTGRES_PASSWORD: tread_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tread -d tread_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://tread:tread_test_password@localhost:5432/tread_test
+      TEST_DATABASE_URL: postgresql://tread:tread_test_password@localhost:5432/tread_test
+      NODE_ENV: test
+      AUTH_ACCESS_TOKEN_SECRET: ci-only-secret-with-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run build
+      - run: npm run test:state-machine
+      - run: node test/ledger.integration.js
+      - run: node test/compliance.integration.js
+      - run: node test/reconciliation.integration.js
+      - run: npm ci --prefix apps/dashboard
+      - run: npm --prefix apps/dashboard run typecheck
+      - run: docker build -f Dockerfile.api -t tread-api:ci .
+      - run: docker build -f Dockerfile.dashboard -t tread-dashboard:ci .

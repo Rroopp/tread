@@ -1,0 +1,75 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile.api
+    image: tread-api:${TREAD_RELEASE_TAG:?set TREAD_RELEASE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:?set managed PostgreSQL DATABASE_URL}
+      AUTH_ACCESS_TOKEN_SECRET: ${AUTH_ACCESS_TOKEN_SECRET:?set a unique random secret}
+      AUTH_ACCESS_TOKEN_TTL_SECONDS: ${AUTH_ACCESS_TOKEN_TTL_SECONDS:-900}
+      AUTH_REFRESH_TOKEN_TTL_DAYS: ${AUTH_REFRESH_TOKEN_TTL_DAYS:-30}
+      WEBHOOK_ALLOWED_HOSTS: ${WEBHOOK_ALLOWED_HOSTS:?set exact approved webhook hostnames}
+      WEBHOOK_SECRET_ENCRYPTION_KEY: ${WEBHOOK_SECRET_ENCRYPTION_KEY:?set base64 encoded 32-byte key}
+      DATA_ENCRYPTION_KEYS_JSON: ${DATA_ENCRYPTION_KEYS_JSON:?set JSON keyring of base64 encoded 32-byte keys}
+      DATA_ENCRYPTION_CURRENT_KEY_ID: ${DATA_ENCRYPTION_CURRENT_KEY_ID:?set current data encryption key id}
+      CORS_ORIGINS: ${CORS_ORIGINS:?set dashboard origin}
+      DASHBOARD_PUBLIC_URL: ${DASHBOARD_PUBLIC_URL:?set HTTPS dashboard origin}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 150
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/v1/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+    networks: [private]
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: Dockerfile.dashboard
+      args:
+        TREAD_API_URL: http://api:3000
+    image: tread-dashboard:${TREAD_RELEASE_TAG:?set TREAD_RELEASE_TAG}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOSTNAME: 0.0.0.0
+      TREAD_API_URL: http://api:3000
+      TREAD_PUBLIC_API_URL: ${TREAD_PUBLIC_API_URL:?set public API origin}
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 100
+    mem_limit: 512m
+    cpus: 1.0
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3001/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+    networks: [private]
+
+networks:
+  private:
+    driver: bridge

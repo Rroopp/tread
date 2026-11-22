@@ -1,0 +1,62 @@
+{
+  "name": "tread-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TREAD financial infrastructure platform API",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main.js",
+    "db:migrate": "npm run build && node dist/database/migrate.js",
+    "dev:seed": "npm run build && node dist/database/seed-dev.js",
+    "dev:seed-user": "npm run build && node dist/database/seed-dev-user.js",
+    "admin:grant": "npm run build && node dist/database/grant-system-admin.js",
+    "admin:revoke": "npm run build && node dist/database/revoke-system-admin.js",
+    "test:state-machine": "npm run build && node test/transaction-state-machine.test.js",
+    "test:dev-database-guard": "npm run build && node --test test/dev-database-guard.test.js",
+    "test:totp": "npm run build && node --test test/totp.service.test.js",
+    "test:mfa-integration": "npm run build && node --test test/mfa.integration.js",
+    "test:onboarding-dual-control": "npm run build && node --test test/onboarding-dual-control.integration.js",
+    "test:provider-mock-integration": "npm run build && node --test test/provider-mock.integration.js",
+    "test:webhook-environment-integration": "npm run build && node --test test/webhook-environment.integration.js",
+    "test:rate-limits-integration": "npm run build && node --test test/rate-limits.integration.js",
+    "test:ledger-integration": "npm run build && node test/ledger.integration.js",
+    "test:reconciliation-integration": "npm run build && node test/reconciliation.integration.js",
+    "test:compliance-integration": "npm run build && node test/compliance.integration.js",
+    "dashboard:dev": "npm --prefix apps/dashboard run dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "@nestjs/common": "^12.5.1",
+    "@nestjs/config": "^12.1.1",
+    "@nestjs/core": "^12.5.1",
+    "@nestjs/jwt": "^12.0.5",
+    "@nestjs/platform-express": "^12.5.1",
+    "@nestjs/swagger": "^12.1.2",
+    "@nestjs/throttler": "^6.8.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^18.0.10",
+    "helmet": "^8.3.0",
+    "joi": "^18.3.2",
+    "pg": "^8.23.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.13",
+    "@nestjs/schematics": "^12.0.13",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^6.0.3"
+  }
+}
