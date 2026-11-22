@@ -43,7 +43,7 @@ The existing `audit_logs` table will also receive an append-only event for gener
 
 ## Migration and rollout plan
 
-1. Add a forward-only migration `025_source_of_funds_evidence.sql` creating the two tables, composite tenant/environment foreign keys, unique/index constraints, and append-only/hash-chain triggers. Do not alter customer, transaction, compliance, or audit rows and do not backfill historical evidence.
+1. Add a forward-only migration `027_source_of_funds_evidence.sql` creating the two tables, composite tenant/environment foreign keys, unique/index constraints, and append-only/hash-chain triggers. Migrations 025 and 026 are reserved for the approved transfer workflow schema and immutable attempt outcome history. Do not alter customer, transaction, compliance, or audit rows and do not backfill historical evidence.
 2. Apply and test this migration only on a disposable PostgreSQL database. Tests must cover cross-tenant/environment foreign-key rejection, snapshot/review hash-chain continuity, rejection of update/delete, and concurrent version creation.
 3. After migration approval, implement an authenticated, tenant/environment-scoped service that reads existing source rows, creates an encrypted immutable snapshot, and emits canonical JSON with the hash metadata. Review actions must bind to the exact snapshot hash.
 4. Verify the exported JSON by decrypting and recomputing the hash before returning it. Responses must label sandbox content as simulated and must never expose decrypted data to roles outside the selected customer/compliance policy.

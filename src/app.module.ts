@@ -15,6 +15,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ProvidersModule } from './modules/providers/providers.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { RootController } from './root.controller';
+import { WorkflowsModule } from './modules/workflows/workflows.module';
 
 @Module({
   controllers: [RootController],
@@ -64,6 +65,7 @@ import { RootController } from './root.controller';
     ProvidersModule,
     AdminModule,
     CustomersModule,
+    WorkflowsModule,
   ],
 })
 export class AppModule {}

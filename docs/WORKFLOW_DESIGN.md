@@ -1,6 +1,6 @@
 # Transfer workflow design
 
-**Status: proposal for approval. No schema or application code has been changed for this task.**
+**Status: approved and implemented as an internal workflow engine, 22 November 2026.** The engine is sandbox-only and does not yet replace the existing provider mock's execution path; wiring that adapter to workflow steps is provider-boundary work in Task B. No production provider can use this engine.
 
 ## Purpose and boundaries
 
@@ -61,7 +61,7 @@ Production timeouts and attempt limits must come from the chosen provider's docu
 
 ## Proposed schema
 
-The following is a logical schema proposal, not executable SQL. Exact checks and indexes will be in a migration only after approval.
+The following logical schema is implemented by forward-only migrations 025 and 026.
 
 ### `transfer_workflows`
 
@@ -86,12 +86,13 @@ One row for each forward or compensation step:
 - `unknown_since`, `reconciliation_case_id`/state, terminal reason, and timestamps.
 - Unique `(workflow_id, step_key, generation)` and scoped composite relationships. Partial fills are represented as exact accumulated amounts with a provider-specific finality marker; they must not be rounded or silently promoted to full success.
 
-### `transfer_workflow_attempts`
+### `transfer_workflow_attempts` and `transfer_workflow_attempt_results`
 
-Append-oriented record of every dispatch attempt:
+Append-only intent record for every dispatch attempt:
 
-- Step, tenant/environment, attempt number, stable provider idempotency key, request hash, dispatch timestamp, timeout/deadline, outcome class (`DEFINITE_SUCCESS`, `DEFINITE_FAILURE`, `UNKNOWN`), provider reference, normalized amounts, and response metadata.
-- A retry creates a new attempt row with the same step idempotency key. Updating the step projection is allowed; attempt evidence is immutable after recorded, with corrections represented as additional observations/events.
+- Step, tenant/environment, attempt number, stable provider idempotency key, request hash, dispatch timestamp, and submitted status. The intent row is immutable.
+- `transfer_workflow_attempt_results` appends the observed outcome class (`DEFINITE_SUCCESS`, `DEFINITE_FAILURE`, `UNKNOWN`), provider reference, normalized result, and result sequence. Reconciliation resolution appends a second result; it does not rewrite the original `UNKNOWN` observation.
+- A retry creates a new attempt row with the same step idempotency key.
 - Unique `(step_id, attempt_number)` and scoped foreign keys.
 
 ### `transfer_workflow_events`
@@ -144,19 +145,19 @@ The diagram describes step-level state transitions. Workflow status is a project
 6. If a later step fails after an earlier external side effect, create compensation steps in reverse dependency order. Irreversible or unsupported compensation is routed to human review; the system must not report recovery as complete.
 7. Transaction status, webhook events, and dashboard displays are projections of durable workflow evidence. Sandbox records and webhooks carry `simulated: true` and `noFundsMoved: true`.
 
-## Migration and rollout proposal
+## Migration and rollout
 
-1. After approval, add a forward-only migration for the four workflow tables, status constraints, scoped FKs/unique constraints, indexes, and append-only event/attempt protection. The existing source-of-funds design document currently proposes migration 025; because this workflow migration should land first, reserve 025 for workflow and renumber the future evidence-package migration to 026 before Task F implementation.
-2. Apply the migration only to a disposable PostgreSQL test database. No production or valuable local database is used for integration tests.
-3. Implement a shadow mode that creates workflow projections alongside existing sandbox provider operations, without changing the existing externally visible transaction status behavior.
-4. Add parity/crash-resume/idempotency tests. Switch sandbox orchestration to workflow-driven scheduling only after parity passes; keep live adapters unregistered.
-5. Document rollback as application rollback while preserving the additive schema and workflow evidence. Do not delete or reinterpret existing provider attempt history.
+1. Migration 025 adds workflow/step/attempt/event tables, scoped FKs, indexes, and immutable attempt/event triggers. Migration 026 adds sequenced append-only outcome records so an initial unknown outcome can later be resolved without mutation.
+2. The migrations and crash-resume test were applied only to a disposable PostgreSQL database whose name contains `test`.
+3. The engine supports scoped workflow creation, policy snapshots, step claiming, stable retry keys, outcome recording, expired-lease-to-unknown recovery, reconciliation resolution, dependency blocking, and reverse-order compensation scheduling.
+4. Existing provider sandbox operations remain separate until Task B adapts the mock to these steps and parity tests pass. Live adapters remain unregistered.
+5. Rollback is application rollback while preserving the additive schema and workflow evidence. Existing provider attempt history is not deleted or reinterpreted.
 
-## Decisions requested for approval
+## Design decisions applied
 
-1. Approve the schema and the four-table model above, including `transfer_workflow_events` as append-only operational history.
-2. Approve migration numbering: workflow migration 025, future evidence-package migration 026.
-3. Confirm that a provider-confirmed partial fill/payout remains in progress until finality/reconciliation, rather than being treated as settled.
-4. Accept that compensation may end in manual recovery when the provider does not support an assured reversal; TREAD will never imply that an external payout can always be recalled.
+1. Use append-only workflow events and separate append-only attempt-result observations; mutable step rows are scheduling projections.
+2. Reserve migrations 025 and 026 for workflow storage and outcome history. The future source-of-funds evidence migration is now 027.
+3. Partial fills/payouts remain incomplete until a provider-specific finality/reconciliation rule is supplied; Task B must encode this.
+4. Compensation may end in manual recovery when the provider does not support an assured reversal; TREAD will never imply that an external payout can always be recalled.
 
 No provider endpoints, fees, retry durations, production timeout values, licensing claims, or recovery guarantees have been assumed in this design.

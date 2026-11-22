@@ -20,6 +20,7 @@
     "test:mfa-integration": "npm run build && node --test test/mfa.integration.js",
     "test:onboarding-dual-control": "npm run build && node --test test/onboarding-dual-control.integration.js",
     "test:provider-mock-integration": "npm run build && node --test test/provider-mock.integration.js",
+    "test:workflow-integration": "npm run build && node --test test/workflow.integration.js",
     "test:webhook-environment-integration": "npm run build && node --test test/webhook-environment.integration.js",
     "test:rate-limits-integration": "npm run build && node --test test/rate-limits.integration.js",
     "test:ledger-integration": "npm run build && node test/ledger.integration.js",
